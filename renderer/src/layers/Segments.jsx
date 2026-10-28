@@ -30,8 +30,8 @@ const SegmentClip = ({ src, seg, transition }) => {
 
   let scale = seg.zoom ?? 1;
   let opacity = 1;
-  if (transition?.type === 'zoom-in') scale *= interpolate(p, [0, 1], [1 + 0.25 * k, 1]);
-  if (transition?.type === 'zoom-out') scale *= interpolate(p, [0, 1], [1 - 0.15 * k, 1]);
+  if (transition?.type === 'zoom-in') scale *= interpolate(p, [0, 1], [1 + 0.12 * k, 1]);
+  if (transition?.type === 'zoom-out') scale *= interpolate(p, [0, 1], [1 - 0.08 * k, 1]);
   if (transition?.type === 'fade') opacity = p;
 
   return (

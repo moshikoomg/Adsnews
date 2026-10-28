@@ -16,7 +16,6 @@ export default function Teleprompter({ script, recording, mode, wpm, fontSize })
   // גלילה לפי קצב כאשר אין זיהוי דיבור
   useEffect(() => {
     if (!recording || supported) return;
-    setTimedIndex(-1);
     const id = setInterval(() => setTimedIndex((i) => Math.min(i + 1, words.length - 1)), 60000 / wpm);
     return () => clearInterval(id);
   }, [recording, supported, wpm, words.length]);
@@ -28,14 +27,16 @@ export default function Teleprompter({ script, recording, mode, wpm, fontSize })
     if (el && box.current) box.current.scrollTo({ top: el.offsetTop - box.current.clientHeight * 0.3, behavior: 'smooth' });
   }, [current]);
 
+  // תסריט חדש = מתחילים מההתחלה. עצירה בין קטעים לא מאפסת את המיקום
   useEffect(() => {
-    if (!recording && box.current) box.current.scrollTo({ top: 0 });
-  }, [recording]);
+    setTimedIndex(-1);
+    box.current?.scrollTo({ top: 0 });
+  }, [script]);
 
   return (
     <div
       ref={box}
-      className="absolute top-20 inset-x-4 h-[34%] overflow-y-auto no-scrollbar rounded-2xl bg-black/45 backdrop-blur-sm px-4 py-3 z-10 text-center leading-relaxed font-semibold"
+      className="absolute top-20 right-4 left-16 h-[34%] overflow-y-auto no-scrollbar rounded-2xl bg-black/45 backdrop-blur-sm px-4 py-3 z-10 text-center leading-relaxed font-semibold"
       style={{ fontSize, maskImage: 'linear-gradient(transparent, black 15%, black 85%, transparent)' }}
     >
       {mode === 'script' ? (

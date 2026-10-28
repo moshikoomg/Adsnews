@@ -3,10 +3,11 @@ import { useStudio, SECTIONS } from '../store/useStudio';
 import { transcribe } from '../lib/captions';
 import PreviewPlayer from '../components/editor/PreviewPlayer';
 import BottomSheet from '../components/common/BottomSheet';
-import { StylePanel, CaptionsPanel, TransitionsPanel, AudioPanel, PromptPanel } from '../components/editor/panels';
+import { ClipsPanel, StylePanel, CaptionsPanel, TransitionsPanel, AudioPanel, PromptPanel } from '../components/editor/panels';
 import { IconButton } from '../components/common/ui';
 
 const TABS = [
+  { id: 'clips', label: 'קטעים', icon: '🎞️', Panel: ClipsPanel },
   { id: 'style', label: 'סגנון', icon: '🎨', Panel: StylePanel },
   { id: 'captions', label: 'כתוביות', icon: '💬', Panel: CaptionsPanel },
   { id: 'transitions', label: 'מעברים', icon: '✂️', Panel: TransitionsPanel },
@@ -16,7 +17,7 @@ const TABS = [
 
 export default function EditorScreen() {
   const { source, words, setWords, settings, script, go, pinned, togglePin, saveDefaults } = useStudio();
-  const [tab, setTab] = useState('style');
+  const [tab, setTab] = useState(source?.clips?.length > 1 ? 'clips' : 'style');
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
@@ -59,9 +60,13 @@ export default function EditorScreen() {
                 </button>
               ))}
             </div>
+            {SECTIONS[tab] ? (
             <button onClick={() => togglePin(tab)} className={`w-full my-3 py-2 rounded-xl text-sm border transition ${isPinned ? 'border-amber-300 bg-amber-300/15 text-amber-200' : 'border-dashed border-white/20 text-white/60'}`}>
               {isPinned ? `📌 "${SECTIONS[tab].label}" מסומן כברירת מחדל` : `📍 סמן את "${SECTIONS[tab].label}" כברירת מחדל`}
             </button>
+            ) : (
+              <div className="my-3 text-xs text-white/50 text-center">לחץ על קטע כדי לצפות בו. מחק, קצץ או סדר לפני יצירת הסרטון.</div>
+            )}
           </div>
         }
       >
@@ -72,7 +77,7 @@ export default function EditorScreen() {
         <button onClick={onSaveDefaults} className="px-4 rounded-2xl bg-white/10 border border-white/15 text-sm font-semibold whitespace-nowrap">
           💾 {pinned.length ? 'שמור נעוצים' : 'שמור הכל כדיפולט'}
         </button>
-        <button onClick={() => go('publish')} disabled={!words.length} className="btn-primary">
+        <button onClick={() => go('publish')} disabled={!words.length || !source.clips?.length} className="btn-primary">
           צור סרטון ←
         </button>
       </div>

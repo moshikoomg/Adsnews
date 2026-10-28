@@ -13,9 +13,12 @@ export function useSpeechFollow(words, active, lang = 'he-IL') {
   const pos = useRef(0);
 
   useEffect(() => {
-    if (!SR || !active || failed) return;
     pos.current = 0;
     setIndex(-1);
+  }, [words]);
+
+  useEffect(() => {
+    if (!SR || !active || failed) return;
     const r = new SR();
     r.lang = lang;
     r.continuous = true;

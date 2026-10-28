@@ -13,6 +13,7 @@ export const SECTIONS = {
   prompt: { label: 'בקשה אישית', keys: ['customPrompt'] },
 };
 
+const newId = () => crypto.randomUUID();
 const pick = (obj, keys) => Object.fromEntries(keys.map((k) => [k, obj[k]]));
 
 export const useStudio = create(
@@ -35,8 +36,9 @@ export const useStudio = create(
       setSource: (source) => {
         const old = get().source;
         if (old?.url) URL.revokeObjectURL(old.url);
+        const clips = (source.clips?.length ? source.clips : [{ id: newId(), start: 0, end: source.durationSec || 0 }]).map((c) => ({ trimStart: 0, trimEnd: 0, ...c }));
         set({
-          source,
+          source: { ...source, clips },
           words: [],
           settings: deepMerge(FACTORY_SETTINGS, get().defaults),
           job: null,
@@ -45,6 +47,31 @@ export const useStudio = create(
         });
       },
       setWords: (words) => set({ words }),
+
+      // עריכת קטעים (כמו בטיקטוק): קיצוץ, מחיקה, סידור מחדש ופיצול
+      updateClip: (id, patch) => set((s) => ({ source: { ...s.source, clips: s.source.clips.map((c) => (c.id === id ? { ...c, ...patch } : c)) } })),
+      removeClip: (id) => set((s) => ({ source: { ...s.source, clips: s.source.clips.filter((c) => c.id !== id) } })),
+      moveClip: (id, dir) =>
+        set((s) => {
+          const clips = [...s.source.clips];
+          const i = clips.findIndex((c) => c.id === id);
+          const j = i + dir;
+          if (i < 0 || j < 0 || j >= clips.length) return {};
+          [clips[i], clips[j]] = [clips[j], clips[i]];
+          return { source: { ...s.source, clips } };
+        }),
+      splitClipAt: (t) =>
+        set((s) => {
+          const clips = s.source.clips.flatMap((c) => {
+            const a = c.start + c.trimStart;
+            const b = c.end - c.trimEnd;
+            if (t <= a + 0.3 || t >= b - 0.3) return [c];
+            return [{ ...c, end: t, trimEnd: 0 }, { ...c, id: newId(), start: t, trimStart: 0 }];
+          });
+          return { source: { ...s.source, clips } };
+        }),
+      seek: null, // { t, n } – בקשה לתצוגה המקדימה לקפוץ לזמן
+      seekTo: (t) => set({ seek: { t, n: Math.random() } }),
 
       update: (path, value) =>
         set((s) => {

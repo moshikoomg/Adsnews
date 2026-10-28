@@ -19,7 +19,7 @@ export const RENDER_SCHEMA_VERSION = '1.0.0';
  */
 export function buildRenderJob({ source, words, settings, publishTargets = [], projectId }) {
   const duration = source.durationSec || words.at(-1)?.end || 0;
-  const segments = buildSegments(words, duration, settings);
+  const segments = buildSegments(words, keepRanges({ ...source, durationSec: duration }), settings);
   const pack = NICHE_PACKS[settings.brand.niche] ?? NICHE_PACKS.general;
 
   return {
@@ -71,34 +71,47 @@ export function buildRenderJob({ source, words, settings, publishTargets = [], p
   };
 }
 
-// חיתוך שתיקות: כל רווח בין מילים מעל הסף הופך לחיתוך. אם כבוי – מקטע אחד.
-function buildSegments(words, duration, settings) {
+// הטווחים שנשארים מהקובץ: הקטעים שלא נמחקו, אחרי קיצוץ התחלה/סוף. בלי קטעים = כל הקובץ
+export function keepRanges(source) {
+  const dur = source.durationSec || 0;
+  const clips = source.clips?.length ? source.clips : [{ start: 0, end: dur }];
+  return clips
+    .map((c) => [c.start + (c.trimStart ?? 0), c.end - (c.trimEnd ?? 0)])
+    .filter(([s, e]) => e - s > 0.05);
+}
+
+// זום קופץ: כל zoomEvery מקטעים/משפטים מגדילים ב-zoomLevel. אותה נוסחה בתצוגה המקדימה וברינדור
+export function zoomFor(index, transitions) {
+  const { jumpCuts, zoomLevel = 0.06, zoomEvery = 3 } = transitions;
+  return jumpCuts && zoomEvery > 0 && index % zoomEvery === zoomEvery - 1 ? 1 + zoomLevel : 1;
+}
+
+// בתוך כל טווח: חיתוך שתיקות לפי רווחים בין מילים (אם מופעל)
+function buildSegments(words, ranges, settings) {
   const { removeSilences, silenceThresholdMs } = settings.audio;
-  if (!removeSilences || words.length === 0) {
-    return [{ index: 0, srcStart: 0, srcEnd: +duration.toFixed(2), outStart: 0, zoom: 1 }];
-  }
   const gap = silenceThresholdMs / 1000;
   const pad = 0.12;
   const raw = [];
-  let start = Math.max(0, words[0].start - pad);
-  for (let i = 1; i < words.length; i++) {
-    if (words[i].start - words[i - 1].end > gap) {
-      raw.push([start, words[i - 1].end + pad]);
-      start = words[i].start - pad;
+
+  for (const [rs, re] of ranges) {
+    const inRange = words.filter((w) => w.start >= rs - 0.01 && w.start < re);
+    if (!removeSilences || inRange.length === 0) {
+      raw.push([rs, re]);
+      continue;
     }
+    let start = Math.max(rs, inRange[0].start - pad);
+    for (let i = 1; i < inRange.length; i++) {
+      if (inRange[i].start - inRange[i - 1].end > gap) {
+        raw.push([start, Math.min(re, inRange[i - 1].end + pad)]);
+        start = Math.max(rs, inRange[i].start - pad);
+      }
+    }
+    raw.push([start, Math.min(re, inRange.at(-1).end + pad)]);
   }
-  raw.push([start, Math.min(duration || Infinity, words.at(-1).end + pad)]);
 
   let out = 0;
   return raw.map(([s, e], index) => {
-    const seg = {
-      index,
-      srcStart: +s.toFixed(2),
-      srcEnd: +e.toFixed(2),
-      outStart: +out.toFixed(2),
-      // Jump-cuts: זום מתחלף בין מקטעים לתחושת דינמיות
-      zoom: settings.transitions.jumpCuts && index % 2 === 1 ? 1 + 0.15 * settings.transitions.intensity : 1,
-    };
+    const seg = { index, srcStart: +s.toFixed(2), srcEnd: +e.toFixed(2), outStart: +out.toFixed(2), zoom: zoomFor(index, settings.transitions) };
     out += e - s;
     return seg;
   });
@@ -113,7 +126,8 @@ function remapWords(words, segments) {
       const shift = seg.outStart - seg.srcStart;
       return { text: w.text, start: +(w.start + shift).toFixed(2), end: +(w.end + shift).toFixed(2) };
     })
-    .filter(Boolean);
+    .filter(Boolean)
+    .sort((a, b) => a.start - b.start); // קטעים שסודרו מחדש: מסדרים לפי זמן הפלט
 }
 
 function buildOverlays(words, segments, settings, pack) {

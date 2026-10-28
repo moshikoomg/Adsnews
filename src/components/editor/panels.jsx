@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { playhead } from './PreviewPlayer';
 import { useStudio } from '../../store/useStudio';
 import { STYLE_PRESETS, FONTS, NICHE_PACKS, TRANSITIONS, MUSIC } from '../../lib/presets';
 import { Chips, Toggle, ColorField, Slider, Section } from '../common/ui';
@@ -96,8 +97,15 @@ export function TransitionsPanel() {
       <Section title="סוג מעבר">
         <Chips options={TRANSITIONS} value={s.transitions.type} onChange={(v) => update('transitions.type', v)} />
       </Section>
-      <Toggle label="Jump-cuts מהירים (זום מתחלף)" checked={s.transitions.jumpCuts} onChange={(v) => update('transitions.jumpCuts', v)} />
-      <Slider label="עוצמה" value={s.transitions.intensity} onChange={(v) => update('transitions.intensity', v)} format={(v) => `${Math.round(v * 100)}%`} />
+      <Slider label="עוצמת המעבר" value={s.transitions.intensity} onChange={(v) => update('transitions.intensity', v)} format={(v) => `${Math.round(v * 100)}%`} />
+      <div className="h-px bg-white/10 my-4" />
+      <Toggle label="זום קופץ בין משפטים" checked={s.transitions.jumpCuts} onChange={(v) => update('transitions.jumpCuts', v)} />
+      {s.transitions.jumpCuts && (
+        <>
+          <Slider label="גודל הזום" value={s.transitions.zoomLevel ?? 0.06} min={0.02} max={0.3} step={0.01} onChange={(v) => update('transitions.zoomLevel', v)} format={(v) => `+${Math.round(v * 100)}%`} />
+          <Slider label="תדירות: זום כל" value={s.transitions.zoomEvery ?? 3} min={2} max={8} step={1} onChange={(v) => update('transitions.zoomEvery', v)} format={(v) => `${v} משפטים`} />
+        </>
+      )}
       <div className="h-px bg-white/10 my-4" />
       <Toggle label="אייקונים אוטומטיים לפי מילות מפתח" checked={s.broll.autoKeywords} onChange={(v) => update('broll.autoKeywords', v)} />
       <Section title="B-Roll / גרפיקה לפי מילת מפתח">
@@ -149,6 +157,68 @@ export function PromptPanel() {
         {SUGGESTIONS.map((t) => <button key={t} onClick={() => add(t)} className="chip">+ {t}</button>)}
       </div>
       <p className="text-xs text-white/40 mt-4">הבקשה נשלחת יחד עם פקודת הרינדור. ב-Backend מודל שפה מתרגם אותה לפעולות עריכה נוספות.</p>
+    </>
+  );
+}
+
+const fmt = (sec) => `${sec.toFixed(1)}s`;
+
+// עריכת קטעים לפני יצירת הסרטון: צפייה, קיצוץ, מחיקה, סידור ופיצול
+export function ClipsPanel() {
+  const clips = useStudio((s) => s.source?.clips ?? []);
+  const { updateClip, removeClip, moveClip, splitClipAt, seekTo } = useStudio.getState();
+  const [confirm, setConfirm] = useState(null);
+  const [open, setOpen] = useState(null);
+  const total = clips.reduce((sum, c) => sum + (c.end - c.start - c.trimStart - c.trimEnd), 0);
+
+  return (
+    <>
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm text-white/60">{clips.length} קטעים · {fmt(total)}</span>
+        <button onClick={() => splitClipAt(playhead.t)} className="chip">✂️ פצל במיקום הנוכחי</button>
+      </div>
+      <div className="flex h-8 gap-[2px] mb-4 rounded-lg overflow-hidden">
+        {clips.map((c, i) => (
+          <button key={c.id} onClick={() => seekTo(c.start + c.trimStart)} className="h-full bg-pink-500/70 text-[10px] font-bold hover:bg-pink-400" style={{ flex: Math.max(0.1, c.end - c.start - c.trimStart - c.trimEnd) }}>
+            {i + 1}
+          </button>
+        ))}
+      </div>
+      <ul className="space-y-2">
+        {clips.map((c, i) => {
+          const len = c.end - c.start;
+          const kept = len - c.trimStart - c.trimEnd;
+          return (
+            <li key={c.id} className="rounded-2xl bg-white/5 border border-white/10 p-3">
+              <div className="flex items-center gap-2">
+                <button onClick={() => seekTo(c.start + c.trimStart)} className="w-9 h-9 rounded-full bg-white/10 shrink-0" aria-label="נגן קטע">▶</button>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold">קטע {i + 1}</div>
+                  <div className="text-xs text-white/50">{fmt(kept)}{kept < len - 0.05 ? ` (מתוך ${fmt(len)})` : ''}</div>
+                </div>
+                <button onClick={() => moveClip(c.id, -1)} disabled={i === 0} className="w-8 h-8 rounded-full bg-white/5 disabled:opacity-30" aria-label="הזז למעלה">↑</button>
+                <button onClick={() => moveClip(c.id, 1)} disabled={i === clips.length - 1} className="w-8 h-8 rounded-full bg-white/5 disabled:opacity-30" aria-label="הזז למטה">↓</button>
+                <button onClick={() => setOpen(open === c.id ? null : c.id)} className={`w-8 h-8 rounded-full ${open === c.id ? 'bg-white text-black' : 'bg-white/5'}`} aria-label="קיצוץ">✂️</button>
+                <button
+                  onClick={() => (confirm === c.id ? (removeClip(c.id), setConfirm(null)) : setConfirm(c.id))}
+                  className={`h-8 rounded-full px-2 text-xs ${confirm === c.id ? 'bg-red-500' : 'bg-white/5'}`}
+                >
+                  {confirm === c.id ? 'למחוק?' : '🗑'}
+                </button>
+              </div>
+              {open === c.id && (
+                <div className="mt-2">
+                  <Slider label="קיצוץ מההתחלה" value={c.trimStart} max={Math.max(0, len - c.trimEnd - 0.3)} step={0.05} format={fmt}
+                    onChange={(v) => { updateClip(c.id, { trimStart: v }); seekTo(c.start + v); }} />
+                  <Slider label="קיצוץ מהסוף" value={c.trimEnd} max={Math.max(0, len - c.trimStart - 0.3)} step={0.05} format={fmt}
+                    onChange={(v) => { updateClip(c.id, { trimEnd: v }); seekTo(Math.max(c.start, c.end - v - 1)); }} />
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      {!clips.length && <p className="text-sm text-white/50 text-center py-6">כל הקטעים נמחקו. חזור לצילום כדי להוסיף.</p>}
     </>
   );
 }

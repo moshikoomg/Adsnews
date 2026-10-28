@@ -1,25 +1,39 @@
-// כפתור Hold-to-record עם טבעת התקדמות
-export default function RecordButton({ recording, elapsed, maxSec, onStart, onStop, disabled }) {
-  const r = 38;
-  const c = 2 * Math.PI * r;
-  const p = Math.min(elapsed / maxSec, 1);
-  const prevent = (e) => e.preventDefault();
+import { useRef } from 'react';
+
+const HOLD_MS = 350;
+
+/**
+ * כמו בטיקטוק: לחיצה קצרה = התחל/עצור, החזקה = מקליט כל עוד האצבע על הכפתור.
+ */
+export default function RecordButton({ recording, onStart, onStop, disabled }) {
+  const down = useRef(0);
+  const wasRecording = useRef(false);
+
+  const onDown = (e) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    down.current = performance.now();
+    wasRecording.current = recording;
+    if (!recording) onStart();
+  };
+  const onUp = () => {
+    const held = performance.now() - down.current > HOLD_MS;
+    if (wasRecording.current) onStop(); // לחיצה בזמן הקלטה עוצרת
+    else if (held) onStop(); // שחרור אחרי החזקה עוצר
+    // לחיצה קצרה כשלא הקליט: ממשיך להקליט עד הלחיצה הבאה
+  };
 
   return (
     <button
       disabled={disabled}
-      onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); onStart(); }}
-      onPointerUp={onStop}
-      onPointerCancel={onStop}
-      onContextMenu={prevent}
+      onPointerDown={onDown}
+      onPointerUp={onUp}
+      onPointerCancel={() => recording && onStop()}
+      onContextMenu={(e) => e.preventDefault()}
       className="relative w-24 h-24 touch-none select-none disabled:opacity-40"
-      aria-label="החזק כדי להקליט"
+      aria-label="לחץ או החזק כדי להקליט"
     >
-      <svg className="absolute inset-0 -rotate-90" viewBox="0 0 84 84">
-        <circle cx="42" cy="42" r={r} stroke="rgba(255,255,255,.35)" strokeWidth="5" fill="none" />
-        <circle cx="42" cy="42" r={r} stroke="#fe2c55" strokeWidth="5" fill="none" strokeDasharray={c} strokeDashoffset={c * (1 - p)} strokeLinecap="round" />
-      </svg>
-      <span className={`absolute inset-0 m-auto rounded-full bg-[#fe2c55] transition-all duration-200 ${recording ? 'w-10 h-10 rounded-xl' : 'w-[68px] h-[68px]'}`} />
+      <span className={`absolute inset-0 rounded-full border-[6px] transition ${recording ? 'border-[#fe2c55]/50 scale-110' : 'border-white/70'}`} />
+      <span className={`absolute inset-0 m-auto bg-[#fe2c55] transition-all duration-200 ${recording ? 'w-9 h-9 rounded-lg' : 'w-[70px] h-[70px] rounded-full'}`} />
     </button>
   );
 }

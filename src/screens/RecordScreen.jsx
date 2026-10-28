@@ -1,11 +1,12 @@
 import { useCallback, useState } from 'react';
 import { useStudio } from '../store/useStudio';
-import { useCamera } from '../hooks/useCamera';
-import { useHoldToRecord } from '../hooks/useHoldToRecord';
+import { useCamera, useCameraZoom } from '../hooks/useCamera';
+import { useClipRecorder } from '../hooks/useClipRecorder';
 import { readVideoMeta } from '../lib/media';
 import EyesIndicator from '../components/record/EyesIndicator';
 import Teleprompter from '../components/record/Teleprompter';
 import RecordButton from '../components/record/RecordButton';
+import ClipProgress from '../components/record/ClipProgress';
 import { IconButton, Chips, Slider } from '../components/common/ui';
 
 const MAX_SEC = 60;
@@ -13,24 +14,38 @@ const MAX_SEC = 60;
 export default function RecordScreen() {
   const { go, script, setScript, setSource } = useStudio();
   const { videoRef, stream, error } = useCamera();
+  const cam = useCameraZoom(stream);
   const [prompter, setPrompter] = useState({ show: true, mode: 'script', wpm: 140, fontSize: 22 });
   const [editing, setEditing] = useState(false);
+  const [fit, setFit] = useState('cover'); // cover = מסך מלא, contain = כל הפריים בלי חיתוך
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const onComplete = useCallback(
-    async ({ blob, durationSec, mimeType }) => {
+    async ({ blob, clips, mimeType, durationSec }) => {
       const url = URL.createObjectURL(blob);
       const meta = await readVideoMeta(url);
       const track = stream?.getVideoTracks()[0]?.getSettings();
-      setSource({ blob, url, origin: 'camera', mimeType, ...meta, durationSec: meta.durationSec || durationSec, width: track?.width, height: track?.height });
+      setSource({ blob, url, origin: 'camera', mimeType, ...meta, durationSec: meta.durationSec || durationSec, width: track?.width, height: track?.height, clips });
     },
     [setSource, stream],
   );
 
-  const { start, stop, recording, elapsed } = useHoldToRecord(stream, { maxSec: MAX_SEC, onComplete });
+  const r = useClipRecorder(stream, { maxSec: MAX_SEC, onComplete });
+  const hasClips = r.clips.length > 0;
+
+  const onDelete = () => {
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      setTimeout(() => setConfirmDelete(false), 2500);
+      return;
+    }
+    r.deleteLast();
+    setConfirmDelete(false);
+  };
 
   return (
-    <div className="h-full relative">
-      <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover -scale-x-100" />
+    <div className="h-full relative bg-black">
+      <video ref={videoRef} autoPlay playsInline muted className={`absolute inset-0 w-full h-full -scale-x-100 ${fit === 'cover' ? 'object-cover' : 'object-contain'}`} />
       {error && (
         <div className="absolute inset-0 flex flex-col gap-4 items-center justify-center p-8 text-center bg-black/90 z-40">
           <div className="text-4xl">📷</div>
@@ -40,25 +55,66 @@ export default function RecordScreen() {
         </div>
       )}
 
-      <EyesIndicator recording={recording} />
+      <div className="absolute top-0 inset-x-0 px-3 pt-[max(env(safe-area-inset-top),6px)] z-30">
+        <ClipProgress clips={r.clips} current={r.current} recording={r.recording} maxSec={MAX_SEC} />
+      </div>
 
-      {prompter.show && <Teleprompter script={script} recording={recording} {...prompter} />}
+      <EyesIndicator recording={r.recording} />
 
-      {!recording && (
-        <div className="absolute top-4 right-3 flex flex-col gap-3 z-20">
-          <IconButton onClick={() => go('home')} aria-label="חזרה">✕</IconButton>
+      {prompter.show && <Teleprompter script={script} recording={r.recording} {...prompter} />}
+
+      {!r.recording && (
+        <>
+          <div className="absolute top-5 right-3 z-20">
+            <IconButton onClick={() => go('home')} aria-label="חזרה">✕</IconButton>
+          </div>
+          <div className="absolute top-5 left-3 flex flex-col gap-3 z-20">
+            <IconButton onClick={() => setPrompter((p) => ({ ...p, show: !p.show }))} aria-label="טלפרומפטר">📜</IconButton>
+            <IconButton onClick={() => setEditing(true)} aria-label="ערוך תסריט">✏️</IconButton>
+            <IconButton onClick={() => setFit((f) => (f === 'cover' ? 'contain' : 'cover'))} aria-label="התאמת תצוגה" className="text-sm font-bold">
+              {fit === 'cover' ? '⤡' : '⤢'}
+            </IconButton>
+          </div>
+        </>
+      )}
+
+      {cam.range && (
+        <div className="absolute left-3 bottom-48 z-20 flex flex-col items-center gap-1">
+          <span className="text-[11px] bg-black/50 rounded-full px-2 py-0.5">{cam.zoom.toFixed(1)}x</span>
+          <input
+            type="range"
+            min={cam.range.min}
+            max={cam.range.max}
+            step={cam.range.step}
+            value={cam.zoom}
+            onChange={(e) => cam.setZoom(+e.target.value)}
+            className="accent-pink-500 w-28 -rotate-90 origin-center my-12"
+            aria-label="זום מצלמה"
+          />
         </div>
       )}
-      {!recording && (
-        <div className="absolute top-4 left-3 flex flex-col gap-3 z-20">
-          <IconButton onClick={() => setPrompter((p) => ({ ...p, show: !p.show }))} aria-label="טלפרומפטר">📜</IconButton>
-          <IconButton onClick={() => setEditing(true)} aria-label="ערוך תסריט">✏️</IconButton>
-        </div>
-      )}
 
-      <div className="absolute bottom-0 inset-x-0 pb-[max(env(safe-area-inset-bottom),24px)] pt-10 flex flex-col items-center gap-3 bg-gradient-to-t from-black/70 to-transparent z-20">
-        <div className="text-sm font-mono">{recording ? `● ${elapsed.toFixed(1)}s` : 'החזק כדי להקליט'}</div>
-        <RecordButton recording={recording} elapsed={elapsed} maxSec={MAX_SEC} onStart={start} onStop={stop} disabled={!stream} />
+      <div className="absolute bottom-0 inset-x-0 pb-[max(env(safe-area-inset-bottom),24px)] pt-10 bg-gradient-to-t from-black/70 to-transparent z-20">
+        <div className="text-center text-sm font-mono mb-3">
+          {r.recording ? `● ${r.totalSec.toFixed(1)}s` : hasClips ? `${r.clips.length} קטעים · ${r.totalSec.toFixed(1)}s` : 'לחץ או החזק כדי להקליט'}
+        </div>
+        <div className="flex items-center justify-around px-6">
+          <div className="w-16 flex justify-center">
+            {hasClips && !r.recording && (
+              <button onClick={onDelete} className={`h-12 rounded-full px-3 text-sm font-semibold transition ${confirmDelete ? 'bg-red-500' : 'bg-black/50 backdrop-blur'}`}>
+                {confirmDelete ? 'למחוק?' : '⌫ קטע'}
+              </button>
+            )}
+          </div>
+          <RecordButton recording={r.recording} onStart={r.start} onStop={r.pause} disabled={!stream || r.totalSec >= MAX_SEC} />
+          <div className="w-16 flex justify-center">
+            {hasClips && !r.recording && (
+              <button onClick={r.finish} className="w-12 h-12 rounded-full bg-[#fe2c55] text-xl font-bold" aria-label="סיום ומעבר לעריכה">
+                ✓
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {editing && (

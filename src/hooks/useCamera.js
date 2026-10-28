@@ -30,3 +30,24 @@ export function useCamera({ facingMode = 'user' } = {}) {
 
   return { videoRef, stream, error };
 }
+
+// זום חומרה של המצלמה (אם המכשיר תומך). מחזיר null כשאין תמיכה.
+export function useCameraZoom(stream) {
+  const [range, setRange] = useState(null);
+  const [zoom, setZoomState] = useState(1);
+
+  useEffect(() => {
+    const track = stream?.getVideoTracks()[0];
+    const caps = track?.getCapabilities?.();
+    if (caps?.zoom) {
+      setRange({ min: caps.zoom.min, max: Math.min(caps.zoom.max, caps.zoom.min * 5), step: caps.zoom.step || 0.1 });
+      setZoomState(track.getSettings().zoom ?? caps.zoom.min);
+    } else setRange(null);
+  }, [stream]);
+
+  const setZoom = (z) => {
+    setZoomState(z);
+    stream?.getVideoTracks()[0]?.applyConstraints({ advanced: [{ zoom: z }] }).catch(() => {});
+  };
+  return { range, zoom, setZoom };
+}
