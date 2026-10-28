@@ -19,7 +19,7 @@ const pick = (obj, keys) => Object.fromEntries(keys.map((k) => [k, obj[k]]));
 export const useStudio = create(
   persist(
     (set, get) => ({
-      screen: 'home', // home | record | editor | publish
+      screen: 'record', // record | editor | publish (כמו טיקטוק: נפתח ישר למצלמה)
       script: 'היי! אני משה מהעסק שלנו. היום אני רוצה לספר לכם על מבצע חדש ומיוחד.\nבואו לבקר אותנו כבר היום!',
       source: null, // { blob, url, origin, mimeType, durationSec, width, height }
       words: [],
@@ -28,6 +28,19 @@ export const useStudio = create(
       pinned: [], // מפתחות מ-SECTIONS
       job: null,
       render: { stage: null, progress: 0, result: null, error: null },
+
+      // במאי ה-AI
+      brief: { prompts: [], inspiration: null }, // הבקשות של הסרטון הנוכחי (ראשונה + תיקונים)
+      defaultBrief: null, // בקשה + השראה שנשמרו כברירת מחדל לכל סרטון חדש
+      ai: { status: 'idle', stage: '', engine: null }, // idle | working | done
+      setBrief: (patch) => set((s) => ({ brief: { ...s.brief, ...patch } })),
+      setAi: (patch) => set((s) => ({ ai: { ...s.ai, ...patch } })),
+      setSettings: (settings) => set({ settings }),
+      saveDefaultBrief: () => {
+        const { brief } = get();
+        set({ defaultBrief: { prompts: brief.prompts, inspiration: brief.inspiration } });
+      },
+      clearDefaultBrief: () => set({ defaultBrief: null }),
 
       go: (screen) => set({ screen }),
       setScript: (script) => set({ script }),
@@ -43,6 +56,8 @@ export const useStudio = create(
           settings: deepMerge(FACTORY_SETTINGS, get().defaults),
           job: null,
           render: { stage: null, progress: 0, result: null, error: null },
+          brief: get().defaultBrief ? { ...get().defaultBrief } : { prompts: [], inspiration: null },
+          ai: { status: 'idle', stage: '', engine: null },
           screen: 'editor',
         });
       },
@@ -111,7 +126,7 @@ export const useStudio = create(
     {
       name: 'video-studio',
       // נשמר מקומית: ברירות מחדל, נעיצות ותסריט. לא נשמר: הקובץ עצמו.
-      partialize: (s) => ({ defaults: s.defaults, pinned: s.pinned, script: s.script }),
+      partialize: (s) => ({ defaults: s.defaults, pinned: s.pinned, script: s.script, defaultBrief: s.defaultBrief }),
     },
   ),
 );

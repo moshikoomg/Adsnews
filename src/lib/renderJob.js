@@ -21,6 +21,7 @@ export function buildRenderJob({ source, words, settings, publishTargets = [], p
   const duration = source.durationSec || words.at(-1)?.end || 0;
   const segments = buildSegments(words, keepRanges({ ...source, durationSec: duration }), settings);
   const pack = NICHE_PACKS[settings.brand.niche] ?? NICHE_PACKS.general;
+  const plan = settings.plan; // תוכנית העריכה של במאי ה-AI (אם נוצרה)
 
   return {
     schemaVersion: RENDER_SCHEMA_VERSION,
@@ -55,17 +56,24 @@ export function buildRenderJob({ source, words, settings, publishTargets = [], p
       ? {
           ...settings.captions,
           fontFamily: fontCss(settings.brand.font),
-          words: remapWords(words, segments),
-          lines: groupLines(remapWords(words, segments), settings.captions.maxWordsPerLine),
+          hideUntil: plan?.hook ? +(plan.hook.end - plan.hook.start).toFixed(2) : 0, // לא מתנגש עם כותרת הפתיחה
+          words: remapWords(words, segments, plan?.emphasis),
+          lines: groupLines(remapWords(words, segments, plan?.emphasis), settings.captions.maxWordsPerLine),
         }
       : null,
-    overlays: buildOverlays(words, segments, settings, pack),
+    overlays: [...buildOverlays(words, segments, settings, pack), ...planOverlays(plan, segments)],
+    // זום ממוקד ברגעים שהבמאי בחר (בזמן הפלט)
+    zooms: (plan?.moments ?? [])
+      .filter((m) => m.kind === 'zoom')
+      .map((m) => ({ start: mapTime(m.t, segments), end: mapTime(m.end, segments), scale: m.scale }))
+      .filter((z) => z.start != null && z.end != null && z.end > z.start),
     audio: {
       music: settings.audio.music === 'none' ? null : { track: settings.audio.music, volume: settings.audio.musicVolume, ducking: true },
       normalize: true,
     },
     ai: {
-      customPrompt: settings.customPrompt?.trim() || null, // מועבר ל-LLM שמתרגם לפעולות עריכה נוספות
+      customPrompt: settings.customPrompt?.trim() || null,
+      summary: plan?.summary ?? null,
     },
     publish: { targets: publishTargets },
   };
@@ -118,13 +126,19 @@ function buildSegments(words, ranges, settings) {
 }
 
 // מתרגם זמני מילים מזמן המקור לזמן הפלט (אחרי חיתוכים)
-function remapWords(words, segments) {
+// זמן במקור -> זמן בפלט (null אם הרגע נחתך)
+export function mapTime(t, segments) {
+  const seg = segments.find((s) => t >= s.srcStart - 0.001 && t <= s.srcEnd + 0.001);
+  return seg ? +(t + seg.outStart - seg.srcStart).toFixed(2) : null;
+}
+
+function remapWords(words, segments, emphasis = []) {
   return words
-    .map((w) => {
+    .map((w, i) => {
       const seg = segments.find((s) => w.start >= s.srcStart - 0.001 && w.start <= s.srcEnd);
       if (!seg) return null;
       const shift = seg.outStart - seg.srcStart;
-      return { text: w.text, start: +(w.start + shift).toFixed(2), end: +(w.end + shift).toFixed(2) };
+      return { text: w.text, start: +(w.start + shift).toFixed(2), end: +(w.end + shift).toFixed(2), ...(emphasis.includes(i) && { emphasis: true }) };
     })
     .filter(Boolean)
     .sort((a, b) => a.start - b.start); // קטעים שסודרו מחדש: מסדרים לפי זמן הפלט
@@ -149,4 +163,21 @@ function buildOverlays(words, segments, settings, pack) {
     overlays.push({ kind: 'image', content: settings.brand.logoUrl, start: 0, end: null, position: 'top-left', opacity: 0.9 });
   }
   return overlays;
+}
+
+// אלמנטים מהתוכנית: אימוג'י, מדבקות טקסט, כותרת פתיחה וקריאה לפעולה
+function planOverlays(plan, segments) {
+  if (!plan) return [];
+  const last = segments.at(-1);
+  const outDur = last ? last.outStart + (last.srcEnd - last.srcStart) : 0;
+  const out = [];
+  for (const m of plan.moments ?? []) {
+    if (m.kind === 'zoom') continue;
+    const start = mapTime(m.t, segments);
+    if (start == null) continue;
+    out.push({ kind: m.kind, content: m.value, start, end: start + (m.end - m.t), animation: 'pop', position: m.position });
+  }
+  if (plan.hook) out.push({ kind: 'title', content: plan.hook.text, start: 0, end: Math.min(plan.hook.end - plan.hook.start, outDur), animation: 'pop', position: 'top' });
+  if (plan.cta && outDur > 2) out.push({ kind: 'cta', content: plan.cta.text, start: Math.max(0, outDur - 2.5), end: outDur, animation: 'pop', position: 'bottom' });
+  return out;
 }

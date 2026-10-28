@@ -13,7 +13,7 @@ export const RenderJobVideo = ({ job }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: job.style.brand.primary || '#000' }}>
       <Segments job={job} />
-      <Overlays overlays={job.overlays} fps={fps} />
+      <Overlays overlays={job.overlays} fps={fps} brand={job.style.brand} />
       {job.captions && <Captions captions={job.captions} brand={job.style.brand} />}
       {music?.url && <Audio src={music.url} volume={music.volume ?? 0.2} loop />}
     </AbsoluteFill>

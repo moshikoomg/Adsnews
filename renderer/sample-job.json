@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0",
-  "jobId": "d72d7bc9-05c3-496a-a237-389bc2db1824",
+  "jobId": "f59fe2bc-e597-434b-8bc5-1a5566cfac61",
   "projectId": null,
-  "createdAt": "2026-10-28T08:11:23.620Z",
+  "createdAt": "2026-10-28T09:39:17.389Z",
   "source": {
     "url": "sample.mp4",
     "origin": "upload",
@@ -37,38 +37,40 @@
       {
         "index": 0,
         "srcStart": 0.18,
-        "srcEnd": 4.58,
+        "srcEnd": 5.42,
         "outStart": 0,
         "zoom": 1
       },
       {
         "index": 1,
-        "srcStart": 5.88,
+        "srcStart": 6.72,
         "srcEnd": 8,
-        "outStart": 4.4,
-        "zoom": 1.12
+        "outStart": 5.24,
+        "zoom": 1
       }
     ],
     "transitions": [
       {
-        "at": 4.4,
+        "at": 5.24,
         "fromSegment": 0,
         "toSegment": 1,
-        "type": "zoom-in",
-        "durationSec": 0.3,
-        "intensity": 0.8
+        "type": "cut",
+        "durationSec": 0,
+        "intensity": 0.4
       }
     ]
   },
   "captions": {
     "enabled": true,
-    "mode": "karaoke",
+    "mode": "word",
     "position": "center",
     "size": "lg",
     "color": "#ffffff",
     "highlightColor": "#fe2c55",
-    "maxWordsPerLine": 4,
+    "maxWordsPerLine": 3,
+    "emphasisStyle": "box",
     "fontFamily": "\"Rubik Mono One\", sans-serif",
+    "hideUntil": 2.34,
     "words": [
       {
         "text": "היי",
@@ -111,37 +113,38 @@
         "end": 3.44
       },
       {
-        "text": "מיוחד",
+        "text": "של",
         "start": 3.48,
         "end": 3.86
       },
       {
-        "text": "לשיניים",
+        "text": "50",
         "start": 3.9,
-        "end": 4.28
+        "end": 4.28,
+        "emphasis": true
+      },
+      {
+        "text": "אחוז",
+        "start": 4.32,
+        "end": 4.7
+      },
+      {
+        "text": "הנחה",
+        "start": 4.74,
+        "end": 5.12
       },
       {
         "text": "בואו",
-        "start": 4.52,
-        "end": 4.9
-      },
-      {
-        "text": "לקבל",
-        "start": 4.94,
-        "end": 5.32
-      },
-      {
-        "text": "חיוך",
         "start": 5.36,
         "end": 5.74
       },
       {
-        "text": "חדש",
+        "text": "לקבל",
         "start": 5.78,
         "end": 6.16
       },
       {
-        "text": "כבר",
+        "text": "חיוך",
         "start": 6.2,
         "end": 6.58
       }
@@ -149,7 +152,7 @@
     "lines": [
       {
         "start": 0.12,
-        "end": 1.76,
+        "end": 1.34,
         "words": [
           {
             "text": "היי",
@@ -165,18 +168,18 @@
             "text": "משה",
             "start": 0.96,
             "end": 1.34
-          },
-          {
-            "text": "מהמרפאה.",
-            "start": 1.38,
-            "end": 1.76
           }
         ]
       },
       {
-        "start": 1.8,
-        "end": 3.44,
+        "start": 1.38,
+        "end": 2.6,
         "words": [
+          {
+            "text": "מהמרפאה.",
+            "start": 1.38,
+            "end": 1.76
+          },
           {
             "text": "היום",
             "start": 1.8,
@@ -186,7 +189,13 @@
             "text": "יש",
             "start": 2.22,
             "end": 2.6
-          },
+          }
+        ]
+      },
+      {
+        "start": 2.64,
+        "end": 3.86,
+        "words": [
           {
             "text": "מבצע",
             "start": 2.64,
@@ -196,32 +205,33 @@
             "text": "הלבנה",
             "start": 3.06,
             "end": 3.44
+          },
+          {
+            "text": "של",
+            "start": 3.48,
+            "end": 3.86
           }
         ]
       },
       {
-        "start": 3.48,
-        "end": 5.32,
+        "start": 3.9,
+        "end": 5.12,
         "words": [
           {
-            "text": "מיוחד",
-            "start": 3.48,
-            "end": 3.86
-          },
-          {
-            "text": "לשיניים",
+            "text": "50",
             "start": 3.9,
-            "end": 4.28
+            "end": 4.28,
+            "emphasis": true
           },
           {
-            "text": "בואו",
-            "start": 4.52,
-            "end": 4.9
+            "text": "אחוז",
+            "start": 4.32,
+            "end": 4.7
           },
           {
-            "text": "לקבל",
-            "start": 4.94,
-            "end": 5.32
+            "text": "הנחה",
+            "start": 4.74,
+            "end": 5.12
           }
         ]
       },
@@ -230,17 +240,17 @@
         "end": 6.58,
         "words": [
           {
-            "text": "חיוך",
+            "text": "בואו",
             "start": 5.36,
             "end": 5.74
           },
           {
-            "text": "חדש",
+            "text": "לקבל",
             "start": 5.78,
             "end": 6.16
           },
           {
-            "text": "כבר",
+            "text": "חיוך",
             "start": 6.2,
             "end": 6.58
           }
@@ -251,42 +261,71 @@
   "overlays": [
     {
       "kind": "emoji",
-      "content": "✨",
-      "keyword": "הלבנה",
-      "start": 3.06,
-      "end": 4.26,
+      "content": "📅",
+      "start": 1.8,
+      "end": 3.1000000000000005,
       "animation": "pop",
       "position": "top-right"
     },
     {
       "kind": "emoji",
-      "content": "🦷",
-      "keyword": "שיניים",
-      "start": 3.9,
-      "end": 5.1,
+      "content": "💸",
+      "start": 4.32,
+      "end": 5.62,
       "animation": "pop",
-      "position": "top-right"
+      "position": "top-left"
     },
     {
       "kind": "emoji",
-      "content": "😁",
-      "keyword": "חיוך",
+      "content": "👇",
       "start": 5.36,
-      "end": 6.5600000000000005,
+      "end": 6.5200000000000005,
       "animation": "pop",
       "position": "top-right"
+    },
+    {
+      "kind": "text",
+      "content": "50 אחוז",
+      "start": 3.9,
+      "end": 5.5,
+      "animation": "pop",
+      "position": "top"
+    },
+    {
+      "kind": "title",
+      "content": "היי אני משה מהמרפאה",
+      "start": 0,
+      "end": 2.34,
+      "animation": "pop",
+      "position": "top"
+    },
+    {
+      "kind": "cta",
+      "content": "בואו לקבל חיוך חדש כבר היום",
+      "start": 4.0200000000000005,
+      "end": 6.5200000000000005,
+      "animation": "pop",
+      "position": "bottom"
+    }
+  ],
+  "zooms": [
+    {
+      "start": 3.8,
+      "end": 4.88,
+      "scale": 1.12
     }
   ],
   "audio": {
     "music": {
       "track": "upbeat",
-      "volume": 0.25,
+      "volume": 0.18,
       "ducking": true
     },
     "normalize": true
   },
   "ai": {
-    "customPrompt": null
+    "customPrompt": null,
+    "summary": "סגנון אנרגטי · 2 מילים מודגשות · 2 זומים ברגעי הדגשה · 3 אלמנטים קופצים · כותרת פתיחה · קריאה לפעולה בסוף"
   },
   "publish": {
     "targets": [

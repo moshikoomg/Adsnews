@@ -67,6 +67,9 @@ export function CaptionsPanel() {
       <Section title="מיקום">
         <Chips options={[{ id: 'top', label: 'עליון' }, { id: 'center', label: 'מרכז' }, { id: 'bottom', label: 'תחתון' }]} value={c.position} onChange={(v) => update('captions.position', v)} />
       </Section>
+      <Section title="הדגשת מילים חשובות">
+        <Chips options={[{ id: 'box', label: 'רקע צבעוני' }, { id: 'scale', label: 'מוגדל' }, { id: 'color', label: 'צבע' }]} value={c.emphasisStyle ?? 'box'} onChange={(v) => update('captions.emphasisStyle', v)} />
+      </Section>
       <Section title="גודל">
         <Chips options={[{ id: 'sm', label: 'קטן' }, { id: 'md', label: 'בינוני' }, { id: 'lg', label: 'גדול' }]} value={c.size} onChange={(v) => update('captions.size', v)} />
       </Section>

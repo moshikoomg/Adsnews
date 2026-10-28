@@ -1,88 +1,137 @@
 import { useEffect, useState } from 'react';
-import { useStudio, SECTIONS } from '../store/useStudio';
+import { useStudio } from '../store/useStudio';
 import { transcribe } from '../lib/captions';
+import { useDirector } from '../hooks/useDirector';
 import PreviewPlayer from '../components/editor/PreviewPlayer';
-import BottomSheet from '../components/common/BottomSheet';
-import { ClipsPanel, StylePanel, CaptionsPanel, TransitionsPanel, AudioPanel, PromptPanel } from '../components/editor/panels';
-import { IconButton } from '../components/common/ui';
+import BriefPanel from '../components/editor/BriefPanel';
+import Sheet from '../components/common/Sheet';
+import { ClipsPanel, StylePanel, CaptionsPanel, TransitionsPanel, AudioPanel } from '../components/editor/panels';
 
-const TABS = [
-  { id: 'clips', label: 'קטעים', icon: '🎞️', Panel: ClipsPanel },
-  { id: 'style', label: 'סגנון', icon: '🎨', Panel: StylePanel },
-  { id: 'captions', label: 'כתוביות', icon: '💬', Panel: CaptionsPanel },
-  { id: 'transitions', label: 'מעברים', icon: '✂️', Panel: TransitionsPanel },
-  { id: 'audio', label: 'אודיו', icon: '🎵', Panel: AudioPanel },
-  { id: 'prompt', label: 'AI', icon: '✨', Panel: PromptPanel },
+// הכלים בפס הימני – כמו במסך העריכה של טיקטוק. ✨ AI הוא הראשי
+const RAIL = [
+  { id: 'ai', icon: '✨', label: 'עריכת AI' },
+  { id: 'captions', icon: 'Aa', label: 'טקסט' },
+  { id: 'clips', icon: '🎞️', label: 'קטעים' },
+  { id: 'style', icon: '🎨', label: 'סגנון' },
+  { id: 'transitions', icon: '✂️', label: 'אפקטים' },
+  { id: 'audio', icon: '🎵', label: 'צליל' },
 ];
+const PANELS = { captions: CaptionsPanel, clips: ClipsPanel, style: StylePanel, transitions: TransitionsPanel, audio: AudioPanel };
+const TITLES = { ai: 'מה לעשות עם הסרטון?', captions: 'טקסט וכתוביות', clips: 'קטעים', style: 'סגנון ומותג', transitions: 'מעברים ואפקטים', audio: 'צליל' };
+const MUSIC = { none: 'בלי צליל', upbeat: 'קצבי', chill: 'רגוע', corporate: 'עסקי' };
 
 export default function EditorScreen() {
-  const { source, words, setWords, settings, script, go, pinned, togglePin, saveDefaults } = useStudio();
-  const [tab, setTab] = useState(source?.clips?.length > 1 ? 'clips' : 'style');
+  const { source, words, setWords, settings, script, go, ai, defaultBrief } = useStudio();
+  const runDirector = useDirector();
+  const [sheet, setSheet] = useState(null);
+  const [chat, setChat] = useState('');
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    if (!source) return go('home');
-    if (!words.length) transcribe({ blob: source.blob, durationSec: source.durationSec, fallbackText: source.origin === 'camera' ? script : null }).then(setWords);
+    if (!source) return go('record');
+    if (!words.length) {
+      transcribe({ blob: source.blob, durationSec: source.durationSec, fallbackText: source.origin === 'camera' ? script : null }).then((w) => {
+        setWords(w);
+        // יש בקשה שמורה כברירת מחדל? עורכים מיד. אחרת פותחים את הבריף
+        if (useStudio.getState().defaultBrief) runDirector().then(flashSummary);
+        else setSheet('ai');
+      });
+    }
   }, [source]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!source) return null;
-  const { Panel } = TABS.find((t) => t.id === tab);
-  const isPinned = pinned.includes(tab);
+  const busy = ai.status === 'working';
 
-  const flash = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 1800);
+  function flashSummary(plan) {
+    if (!plan) return;
+    setToast(plan.summary);
+    setTimeout(() => setToast(null), 4500);
+  }
+
+  const generate = async () => {
+    setSheet(null);
+    flashSummary(await runDirector());
   };
-  const onSaveDefaults = async () => {
-    const n = await saveDefaults(pinned.length === 0);
-    flash(pinned.length === 0 ? 'כל ההגדרות נשמרו כברירת מחדל ✓' : `${n} מקטעים נשמרו כברירת מחדל ✓`);
+  const refine = async (e) => {
+    e.preventDefault();
+    const text = chat.trim();
+    if (!text) return;
+    setChat('');
+    flashSummary(await runDirector(text));
   };
+
+  const Panel = PANELS[sheet];
 
   return (
     <div className="h-full relative bg-black">
-      <div className="absolute inset-x-0 top-0 h-[56%] pt-3 px-3">
-        <PreviewPlayer source={source} words={words} settings={settings} />
-      </div>
-      <div className="absolute top-4 right-4 z-20">
-        <IconButton onClick={() => go('home')}>✕</IconButton>
-      </div>
-      {!words.length && <div className="absolute top-[25%] inset-x-0 text-center text-sm text-white/70 z-20">מתמלל...</div>}
+      <PreviewPlayer source={source} words={words} settings={settings} />
 
-      <BottomSheet
-        header={
-          <div className="px-4">
-            <div className="flex gap-1 overflow-x-auto no-scrollbar">
-              {TABS.map((t) => (
-                <button key={t.id} onClick={() => setTab(t.id)} className={`flex-1 min-w-[64px] py-2 rounded-xl text-xs flex flex-col items-center gap-0.5 ${tab === t.id ? 'bg-white/10' : 'text-white/60'}`}>
-                  <span className="text-lg">{t.icon}</span>
-                  {t.label}
-                  {pinned.includes(t.id) && <span className="text-[9px]">📌</span>}
-                </button>
-              ))}
-            </div>
-            {SECTIONS[tab] ? (
-            <button onClick={() => togglePin(tab)} className={`w-full my-3 py-2 rounded-xl text-sm border transition ${isPinned ? 'border-amber-300 bg-amber-300/15 text-amber-200' : 'border-dashed border-white/20 text-white/60'}`}>
-              {isPinned ? `📌 "${SECTIONS[tab].label}" מסומן כברירת מחדל` : `📍 סמן את "${SECTIONS[tab].label}" כברירת מחדל`}
-            </button>
-            ) : (
-              <div className="my-3 text-xs text-white/50 text-center">לחץ על קטע כדי לצפות בו. מחק, קצץ או סדר לפני יצירת הסרטון.</div>
-            )}
-          </div>
-        }
-      >
-        <Panel />
-      </BottomSheet>
-
-      <div className="absolute bottom-0 inset-x-0 z-40 p-4 pb-[max(env(safe-area-inset-bottom),16px)] bg-gradient-to-t from-black via-black/95 to-transparent flex gap-2">
-        <button onClick={onSaveDefaults} className="px-4 rounded-2xl bg-white/10 border border-white/15 text-sm font-semibold whitespace-nowrap">
-          💾 {pinned.length ? 'שמור נעוצים' : 'שמור הכל כדיפולט'}
+      {/* עליון: חזרה + צליל */}
+      <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),14px)]">
+        <button onClick={() => go('record')} className="w-9 h-9 rounded-full bg-black/40 backdrop-blur text-lg" aria-label="חזרה למצלמה">‹</button>
+        <button onClick={() => setSheet('audio')} className="flex items-center gap-1.5 rounded-full bg-black/45 backdrop-blur px-4 py-1.5 text-sm font-semibold">
+          🎵 {MUSIC[settings.audio.music] ?? 'הוסף צליל'}
         </button>
-        <button onClick={() => go('publish')} disabled={!words.length || !source.clips?.length} className="btn-primary">
-          צור סרטון ←
-        </button>
+        <span className="w-9" />
       </div>
 
-      {toast && <div className="absolute top-20 inset-x-8 z-50 rounded-xl bg-white text-black text-center py-2 text-sm font-semibold animate-pop">{toast}</div>}
+      {/* פס כלים ימני */}
+      <div className="absolute right-2 top-20 z-20 flex flex-col gap-3">
+        {RAIL.map((r) => (
+          <button key={r.id} onClick={() => setSheet(r.id)} className="flex flex-col items-center gap-0.5 w-14">
+            <span className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold drop-shadow ${r.id === 'ai' ? 'bg-gradient-to-br from-pink-500 to-violet-500' : 'bg-black/35 backdrop-blur'}`}>{r.icon}</span>
+            <span className="text-[10px] font-semibold drop-shadow">{r.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {(busy || !words.length) && (
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-black/55 backdrop-blur-sm pointer-events-none">
+          <div className="w-12 h-12 rounded-full border-4 border-white/20 border-t-pink-500 animate-spin" />
+          <div className="text-sm font-semibold">{!words.length ? 'מתמלל את הסרטון...' : ai.stage || 'הבמאי עורך...'}</div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="absolute top-16 inset-x-6 z-30 rounded-2xl bg-white text-black px-4 py-3 text-sm font-semibold shadow-xl animate-pop">
+          ✨ {toast}
+        </div>
+      )}
+
+      {/* תחתון: צ'אט תיקונים + הבא */}
+      <div className="absolute bottom-0 inset-x-0 z-20 px-3 pb-[max(env(safe-area-inset-bottom),14px)] pt-8 bg-gradient-to-t from-black/80 to-transparent">
+        {settings.plan ? (
+          <form onSubmit={refine} className="flex gap-2 mb-3">
+            <input
+              id="refine"
+              value={chat}
+              onChange={(e) => setChat(e.target.value)}
+              placeholder='בקש שינוי: "תגדיל את הטקסט", "בלי זום"...'
+              className="flex-1 rounded-full bg-white/15 backdrop-blur px-4 py-2.5 text-sm outline-none placeholder:text-white/50"
+            />
+            <button disabled={busy || !chat.trim()} className="w-11 h-11 rounded-full bg-white text-black font-bold disabled:opacity-40" aria-label="שלח">↑</button>
+          </form>
+        ) : (
+          <button onClick={() => setSheet('ai')} className="w-full mb-3 rounded-full bg-white/15 backdrop-blur py-2.5 text-sm">
+            ✨ ספר לבמאי מה לעשות עם הסרטון
+          </button>
+        )}
+        <div className="flex gap-2">
+          <button onClick={() => setSheet('ai')} className="flex-1 rounded-lg bg-white/15 py-3 text-sm font-semibold">
+            {defaultBrief ? '✨ הבריף שלך' : '✨ בריף'}
+          </button>
+          <button onClick={() => go('publish')} disabled={!words.length || !source.clips?.length || busy} className="flex-[2] rounded-lg bg-[#fe2c55] py-3 font-bold disabled:opacity-40">
+            הבא
+          </button>
+        </div>
+      </div>
+
+      <Sheet open={sheet === 'ai'} onClose={() => setSheet(null)} title={TITLES.ai} tall>
+        <BriefPanel onGenerate={generate} busy={busy} />
+      </Sheet>
+      <Sheet open={!!Panel} onClose={() => setSheet(null)} title={TITLES[sheet]}>
+        {Panel && <Panel />}
+      </Sheet>
     </div>
   );
 }

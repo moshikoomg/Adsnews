@@ -17,7 +17,8 @@ export const FACTORY_SETTINGS = {
     size: 'lg', // sm | md | lg
     color: '#ffffff',
     highlightColor: '#fe2c55',
-    maxWordsPerLine: 4,
+    maxWordsPerLine: 3,
+    emphasisStyle: 'box', // box | scale | color – איך מודגשות מילים חשובות
   },
   // jumpCuts = זום קופץ בין משפטים. zoomLevel = כמה להגדיל (0.06 = 6%), zoomEvery = כל כמה משפטים
   transitions: { type: 'zoom-in', jumpCuts: true, intensity: 0.5, zoomLevel: 0.06, zoomEvery: 3 },
