@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; overscroll-behavior: none; }
+body { -webkit-tap-highlight-color: transparent; user-select: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+@layer components {
+  .chip { @apply px-3 py-1.5 rounded-full text-sm border border-white/15 bg-white/5 whitespace-nowrap transition; }
+  .chip-on { @apply bg-white text-black border-white; }
+  .label { @apply text-xs uppercase tracking-wide text-white/50 mb-2 block; }
+  .btn-primary { @apply w-full py-3.5 rounded-2xl font-bold bg-gradient-to-l from-pink-500 to-violet-500 active:scale-[.98] transition disabled:opacity-40; }
+  .input { @apply w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 outline-none focus:border-pink-400; }
+}

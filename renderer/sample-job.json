@@ -1,0 +1,297 @@
+{
+  "schemaVersion": "1.0.0",
+  "jobId": "d72d7bc9-05c3-496a-a237-389bc2db1824",
+  "projectId": null,
+  "createdAt": "2026-10-28T08:11:23.620Z",
+  "source": {
+    "url": "sample.mp4",
+    "origin": "upload",
+    "mimeType": "video/mp4",
+    "durationSec": 8,
+    "width": 720,
+    "height": 1280
+  },
+  "output": {
+    "aspect": "9:16",
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "format": "mp4",
+    "codec": "h264"
+  },
+  "style": {
+    "presetId": "energetic",
+    "brand": {
+      "businessName": "העסק של משה",
+      "primary": "#000000",
+      "secondary": "#ffffff",
+      "accent": "#fe2c55",
+      "font": "display",
+      "logoUrl": "",
+      "niche": "dental",
+      "fontFamily": "\"Rubik Mono One\", sans-serif"
+    }
+  },
+  "timeline": {
+    "segments": [
+      {
+        "index": 0,
+        "srcStart": 0.18,
+        "srcEnd": 4.58,
+        "outStart": 0,
+        "zoom": 1
+      },
+      {
+        "index": 1,
+        "srcStart": 5.88,
+        "srcEnd": 8,
+        "outStart": 4.4,
+        "zoom": 1.12
+      }
+    ],
+    "transitions": [
+      {
+        "at": 4.4,
+        "fromSegment": 0,
+        "toSegment": 1,
+        "type": "zoom-in",
+        "durationSec": 0.3,
+        "intensity": 0.8
+      }
+    ]
+  },
+  "captions": {
+    "enabled": true,
+    "mode": "karaoke",
+    "position": "center",
+    "size": "lg",
+    "color": "#ffffff",
+    "highlightColor": "#fe2c55",
+    "maxWordsPerLine": 4,
+    "fontFamily": "\"Rubik Mono One\", sans-serif",
+    "words": [
+      {
+        "text": "היי",
+        "start": 0.12,
+        "end": 0.5
+      },
+      {
+        "text": "אני",
+        "start": 0.54,
+        "end": 0.92
+      },
+      {
+        "text": "משה",
+        "start": 0.96,
+        "end": 1.34
+      },
+      {
+        "text": "מהמרפאה.",
+        "start": 1.38,
+        "end": 1.76
+      },
+      {
+        "text": "היום",
+        "start": 1.8,
+        "end": 2.18
+      },
+      {
+        "text": "יש",
+        "start": 2.22,
+        "end": 2.6
+      },
+      {
+        "text": "מבצע",
+        "start": 2.64,
+        "end": 3.02
+      },
+      {
+        "text": "הלבנה",
+        "start": 3.06,
+        "end": 3.44
+      },
+      {
+        "text": "מיוחד",
+        "start": 3.48,
+        "end": 3.86
+      },
+      {
+        "text": "לשיניים",
+        "start": 3.9,
+        "end": 4.28
+      },
+      {
+        "text": "בואו",
+        "start": 4.52,
+        "end": 4.9
+      },
+      {
+        "text": "לקבל",
+        "start": 4.94,
+        "end": 5.32
+      },
+      {
+        "text": "חיוך",
+        "start": 5.36,
+        "end": 5.74
+      },
+      {
+        "text": "חדש",
+        "start": 5.78,
+        "end": 6.16
+      },
+      {
+        "text": "כבר",
+        "start": 6.2,
+        "end": 6.58
+      }
+    ],
+    "lines": [
+      {
+        "start": 0.12,
+        "end": 1.76,
+        "words": [
+          {
+            "text": "היי",
+            "start": 0.12,
+            "end": 0.5
+          },
+          {
+            "text": "אני",
+            "start": 0.54,
+            "end": 0.92
+          },
+          {
+            "text": "משה",
+            "start": 0.96,
+            "end": 1.34
+          },
+          {
+            "text": "מהמרפאה.",
+            "start": 1.38,
+            "end": 1.76
+          }
+        ]
+      },
+      {
+        "start": 1.8,
+        "end": 3.44,
+        "words": [
+          {
+            "text": "היום",
+            "start": 1.8,
+            "end": 2.18
+          },
+          {
+            "text": "יש",
+            "start": 2.22,
+            "end": 2.6
+          },
+          {
+            "text": "מבצע",
+            "start": 2.64,
+            "end": 3.02
+          },
+          {
+            "text": "הלבנה",
+            "start": 3.06,
+            "end": 3.44
+          }
+        ]
+      },
+      {
+        "start": 3.48,
+        "end": 5.32,
+        "words": [
+          {
+            "text": "מיוחד",
+            "start": 3.48,
+            "end": 3.86
+          },
+          {
+            "text": "לשיניים",
+            "start": 3.9,
+            "end": 4.28
+          },
+          {
+            "text": "בואו",
+            "start": 4.52,
+            "end": 4.9
+          },
+          {
+            "text": "לקבל",
+            "start": 4.94,
+            "end": 5.32
+          }
+        ]
+      },
+      {
+        "start": 5.36,
+        "end": 6.58,
+        "words": [
+          {
+            "text": "חיוך",
+            "start": 5.36,
+            "end": 5.74
+          },
+          {
+            "text": "חדש",
+            "start": 5.78,
+            "end": 6.16
+          },
+          {
+            "text": "כבר",
+            "start": 6.2,
+            "end": 6.58
+          }
+        ]
+      }
+    ]
+  },
+  "overlays": [
+    {
+      "kind": "emoji",
+      "content": "✨",
+      "keyword": "הלבנה",
+      "start": 3.06,
+      "end": 4.26,
+      "animation": "pop",
+      "position": "top-right"
+    },
+    {
+      "kind": "emoji",
+      "content": "🦷",
+      "keyword": "שיניים",
+      "start": 3.9,
+      "end": 5.1,
+      "animation": "pop",
+      "position": "top-right"
+    },
+    {
+      "kind": "emoji",
+      "content": "😁",
+      "keyword": "חיוך",
+      "start": 5.36,
+      "end": 6.5600000000000005,
+      "animation": "pop",
+      "position": "top-right"
+    }
+  ],
+  "audio": {
+    "music": {
+      "track": "upbeat",
+      "volume": 0.25,
+      "ducking": true
+    },
+    "normalize": true
+  },
+  "ai": {
+    "customPrompt": null
+  },
+  "publish": {
+    "targets": [
+      "tiktok",
+      "instagram"
+    ]
+  }
+}

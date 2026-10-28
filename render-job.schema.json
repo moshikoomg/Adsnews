@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RenderJob",
+  "description": "פקודת רינדור שנשלחת מה-Frontend ל-Edge Function / מנוע Remotion-FFmpeg",
+  "type": "object",
+  "required": ["schemaVersion", "jobId", "source", "output", "style", "timeline", "overlays", "audio", "ai", "publish"],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "jobId": { "type": "string", "format": "uuid" },
+    "projectId": { "type": ["string", "null"] },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "source": {
+      "type": "object",
+      "required": ["origin", "durationSec"],
+      "properties": {
+        "url": { "type": ["string", "null"] },
+        "origin": { "enum": ["camera", "upload"] },
+        "mimeType": { "type": "string" },
+        "durationSec": { "type": "number" },
+        "width": { "type": ["integer", "null"] },
+        "height": { "type": ["integer", "null"] }
+      }
+    },
+    "output": {
+      "type": "object",
+      "properties": {
+        "aspect": { "enum": ["9:16", "1:1", "16:9"] },
+        "width": { "type": "integer" }, "height": { "type": "integer" },
+        "fps": { "type": "integer" }, "format": { "const": "mp4" }, "codec": { "type": "string" }
+      }
+    },
+    "style": {
+      "type": "object",
+      "properties": {
+        "presetId": { "type": "string" },
+        "brand": {
+          "type": "object",
+          "properties": {
+            "businessName": { "type": "string" }, "primary": { "type": "string" }, "secondary": { "type": "string" },
+            "accent": { "type": "string" }, "font": { "type": "string" }, "fontFamily": { "type": "string" },
+            "logoUrl": { "type": "string" }, "niche": { "type": "string" }
+          }
+        }
+      }
+    },
+    "timeline": {
+      "type": "object",
+      "properties": {
+        "segments": {
+          "type": "array",
+          "description": "מקטעים שנשארים אחרי חיתוך שתיקות. src* = זמן במקור, outStart = זמן בפלט",
+          "items": {
+            "type": "object",
+            "required": ["index", "srcStart", "srcEnd", "outStart"],
+            "properties": { "index": { "type": "integer" }, "srcStart": { "type": "number" }, "srcEnd": { "type": "number" }, "outStart": { "type": "number" }, "zoom": { "type": "number" } }
+          }
+        },
+        "transitions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": { "at": { "type": "number" }, "fromSegment": { "type": "integer" }, "toSegment": { "type": "integer" }, "type": { "enum": ["cut", "zoom-in", "zoom-out", "fade"] }, "durationSec": { "type": "number" }, "intensity": { "type": "number" } }
+          }
+        }
+      }
+    },
+    "captions": {
+      "type": ["object", "null"],
+      "properties": {
+        "mode": { "enum": ["karaoke", "word", "sentence"] },
+        "position": { "enum": ["top", "center", "bottom"] },
+        "size": { "enum": ["sm", "md", "lg"] },
+        "color": { "type": "string" }, "highlightColor": { "type": "string" }, "fontFamily": { "type": "string" },
+        "words": { "type": "array", "items": { "$ref": "#/$defs/word" } },
+        "lines": { "type": "array", "items": { "type": "object", "properties": { "start": { "type": "number" }, "end": { "type": "number" }, "words": { "type": "array", "items": { "$ref": "#/$defs/word" } } } } }
+      }
+    },
+    "overlays": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "content", "start"],
+        "properties": {
+          "kind": { "enum": ["emoji", "image", "video"] }, "content": { "type": "string" }, "keyword": { "type": "string" },
+          "start": { "type": "number" }, "end": { "type": ["number", "null"] },
+          "animation": { "type": "string" }, "position": { "type": "string" }, "opacity": { "type": "number" }
+        }
+      }
+    },
+    "audio": {
+      "type": "object",
+      "properties": {
+        "music": { "type": ["object", "null"], "properties": { "track": { "type": "string" }, "volume": { "type": "number" }, "ducking": { "type": "boolean" } } },
+        "normalize": { "type": "boolean" }
+      }
+    },
+    "ai": { "type": "object", "properties": { "customPrompt": { "type": ["string", "null"] }, "resolvedActions": { "type": "array" } } },
+    "publish": { "type": "object", "properties": { "targets": { "type": "array", "items": { "enum": ["tiktok", "instagram", "youtube", "facebook", "linkedin"] } } } }
+  },
+  "$defs": {
+    "word": { "type": "object", "required": ["text", "start", "end"], "properties": { "text": { "type": "string" }, "start": { "type": "number" }, "end": { "type": "number" } } }
+  }
+}
